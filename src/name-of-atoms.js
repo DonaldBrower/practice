@@ -38,13 +38,13 @@ const isNumber = (str) => {
   }
 };
 
-/* 
-atoms are tokenized while recursivly moving through the inside all of the 
-grouped sections of the forumla, as well as after reducing the tuples in a map
-
-uses state machine, returns an array of Tuples:
-[atomName: str, atomQty: num]
-*/
+/*
+ * atoms are tokenized while recursivly moving through the inside all of the
+ * grouped sections of the forumla, as well as after reducing the tuples in a map
+ *
+ * uses state machine, returns an array of Tuples:
+ * [atomName: str, atomQty: num]
+ */
 const tokenizeAtoms = (atomString, stateMachine) => {
   const atomChars = atomString.split("");
 
@@ -53,60 +53,17 @@ const tokenizeAtoms = (atomString, stateMachine) => {
     quantString: "",
     atoms: [],
   };
-  /* 
-  vocab:
-    - atom string: [[A [b [...b]]...]
-        in a formula: HO(KOg2)3
-          -> HO, KOg
-    - atom number [atomString[*int]]
-        in a formula: HO(KOg2)3
-          -> 2 -- from the atom string/number COMBINATION of KOg2
 
-        note that 3 is not an atom number. it is a grouping multiplier number
-        so it is applied to the atom qty in the tuples, which has already been given whatever initial value after the atom number was distributed to the atoms.
-
-  before the characters and state obj goes through the state machine:
-    - get every atom string and optional number that is either independent of groups, or the groups' content
-
-    let tempTuples = []
-    atomChars.forEach
-
-    HO(KOg3)2 -> ["HO" "KOg3"]
-    - create a new tuple for every substring of this atom string that represents 
-    and individual atom eg:
-    
-    "HO" -> [[H, undef], [O, undef]]
-
-
-  */
   stateMachine(atomChars, state);
   return state.atoms;
 };
 
-/*
-logic for the atoms tokenization
-	-> read each character and it's next
-  -> build up the atom string and the string of the optional number
-  -> reset these string states once it's determined the loop is on the
-     last character of the atom
-     
-  update: 3:38 - the state machine logic is all wrong. i don't know yet
-  what the implication is for the rest of the program.
+/* 
+  tokenize("MgOg2") should return [Mg, 2], [Og, 2]
   
-  right now, tokenize("MgOg2") would return [Mg, 1], [Og, 2]
-  but it should return [Mg, 2], [Og, 2]
-  
-  if parenthesis are used, then only the atoms inside get the coeffcient, eg:
-    "Mg(OH)2" [Mg, 1], [O, 2], [H, 2] 
+  if parenthesis are used, then only the atoms inside get the coeffcient, eg: "Mg(OH)2" [Mg, 1], [O, 2], [H, 2] 
 
-
-  is it possible to just distribute the atom string coeffecients before handling any parenthesis groups, that
-  way one the distribution of the group coefeccient  happens, it can be applied to all the tuples, and then can be simply reduced
-  without worrying about if the right distribution was made with regards to the atom string expansions
-
-  right now Mg(OH)2 ->
-
-  
+  distribute the atom string coeffecients before handling any parenthesis groups, so when the distributing the group coefeccient  happens, it can be applied to all the tuples, and then can be simply reduced  
 */
 const stateMachine = (atomCharacters, state) => {
   atomCharacters.forEach((char, i) => {
@@ -139,18 +96,13 @@ const stateMachine = (atomCharacters, state) => {
 };
 
 /*
-split by atom
-use option number at the end of continuous atom markers, or zero, and assign it to right side of tuple
+  split by atom
+  use option number at the end of continuous atom markers, or zero, and assign it to right side of tuple
 
-
-K(MgAu(HO2)2)3
-
-
-
+  K(MgAu(HO2)2)3
 */
 const stateMachine2 = (atomCharacters, state) => {
   atomCharacters.forEach((char, idx) => {
-    // debugger;
     const nextChar = atomCharacters[idx + 1] || null;
 
     if (isNumber(char)) {
@@ -176,27 +128,6 @@ const stateMachine2 = (atomCharacters, state) => {
     }
   });
 };
-//     is the next char the end of this atom/these atoms?
-//     if (["(", ")", null].includes(nextChar)) {
-//     	atoms.push([state.buffer, +state.quantString)
-//     }
-//     if (isCap(nextChar) === true || nextChar === null) {
-//     	if (isNumber(char)) state.quantString += char;
-//     	if (typeof char === "string") state.buffer += char;
-
-//       if (!state.quantString) state.quantString = "1";
-
-//       state.atoms.push([state.buffer, +state.quantString]);
-//       state.buffer = "";
-//       state.quantString = "";
-//     }
-
-//     if (isCap(nextChar) === false) {
-//       if (!isNumber(char)) {
-//       	state.buffer += char;
-//       } else if (isNumber(char)) {
-//         state.quantString += char;
-//   });
 
 const distributeOverAtoms = (coeffecient, atoms) => {
   atoms.forEach((atom) => {
@@ -263,7 +194,7 @@ const createExpandedExpression = (formula) => {
   let groupTuple = findNumberAfterCloseParen(formula, closeParenIdx);
 
   let rawContent = formula.slice(openParenIdx + 1, closeParenIdx);
-  let groupContent = tokenizeAtoms(rawContent, stateMachine2);
+  let groupContent = tokenizeAtoms(rawContent, stateMachine);
 
   distributeOverAtoms(groupTuple[0], groupContent);
 
@@ -299,13 +230,113 @@ const simplifyChemicalFormula = (formula) => {
   return tupleJoin(sortedTuples);
 };
 
-console.log(simplifyChemicalFormula("Mg(OH)2"));
-console.log(tokenizeAtoms("Mg(OH)2", stateMachine2));
-console.log(simplifyChemicalFormula("MgOg2"));
-console.log(tokenizeAtoms("MgOg2", stateMachine2));
+// console.log(simplifyChemicalFormula("Mg(OH)2"));
+// console.log(tokenizeAtoms("Mg(OH)2", stateMachine2));
+// console.log(simplifyChemicalFormula("MgOg2"));
+// console.log(tokenizeAtoms("MgOg2", stateMachine2));
 
+/**
+ *
+ * @param {*} formula
+ * @param {*} state
+ * @param {*} state.buffer
+ * @param {*} state.optionalNumber
+ */
+
+/**
+ * one approach is:
+ *
+ * in addition to the ourArray array of atom tuples, maybe we should include a piece
+ * of data that also includes the start and end indices for replacement.
+ *
+ * if we make the replacements from right to left, then the indices of the next replacement
+ * would not be mutated.
+ *
+ * Mg(OH)2 - init
+ * Mg(O1H1)2 - pass on tuples[1]
+ * Mg1(O1H1)2 - pass on tuples [0]
+ *
+ * tuples = [
+ *   OurArray:[[Mg, 1], 0, 1]
+ *   OurArray:[[O, 1], [H, 1], 3, 4],
+ * ]
+ * ]
+ */
+/**
+ * on first pass you need to get the first parenthesis group, a la
+ *
+ * let openParenIdx = formula.lastIndexOf("(");
+ * let closeParenIdx = formula.indexOf(")");
+ *
+ * and on subequent runs, until there are no atoms strings between the
+ * first open parenthesis, the atomstring for
+ *  secondLastIndexOf("(") and nextIndexOf(")"), approaching lastIndexOf("(")
+ */
+
+const firstPassSM = (formula, state) => {
+  const chars = formula.split("");
+  const groupingChars = ["(", ")"];
+  let { currentAtomString, optionalNumber, tuples, start, end } = state;
+
+  chars.forEach((char, idx) => {
+    const nextChar = chars[idx + 1];
+
+    if ((groupingChars.includes(char) || !nextChar) && currentAtomString) {
+      console.log("in first if");
+
+      if (char === "(") {
+        console.log();
+      }
+      end = idx - 1;
+
+      const ourAtoms = tokenizeAtoms(currentAtomString, stateMachine);
+      tuples.push([ourAtoms, [start, end]]);
+
+      currentAtomString = "";
+      start = null;
+      end = null;
+      console.log();
+    }
+
+    if (!isNumber(char) && !groupingChars.includes(char)) {
+      currentAtomString += char;
+
+      if (start === null) {
+        start = idx;
+      }
+    }
+    if (isNumber(char) && currentAtomString) {
+      currentAtomString += char;
+    }
+  });
+
+  for (let i = tuples.length - 1; i >= 0; i--) {
+    let mytuple = tuples[i];
+    let indexTuple = mytuple[mytuple.length - 1];
+
+    mytuple.pop();
+
+    let replaceString = "";
+    mytuple.forEach((tuple) => {
+      replaceString += tupleJoin(tuple);
+    });
+
+    formula = replace(formula, indexTuple[0], indexTuple[1], replaceString);
+  }
+
+  return formula;
+};
+let thestate = firstPassSM("Abc(Def(Abc2)2)2", {
+  currentAtomString: "",
+  tuples: [],
+  start: null,
+  end: null,
+});
+
+console.log(simplifyChemicalFormula(thestate));
+console.log();
 /*
-what im seeing now is that when parens are there, simplifyChemicalFormula() works and makes the right string according to the screenshot
+what im seeing now is that when parens are there, simplifyChemicalFormula() works and makes the right string according to the screenshotf
 
 simplifyChemicalFormula("Mg(OH)2")
 tokenizeAtoms("Mg(OH)2", stateMachine2)
