@@ -18,6 +18,11 @@ trying to solve this by
 turn a string of atom names and numbers into an array of tuples:
 [ [name, number], ... ]
 */
+function main() {
+  // let expandedGroups = expandGroups("MgOg2");
+  let expandedGroups = expandGroups("Abc(Def(AbcOg2)2)3");
+  return simplifyChemicalFormula(expandedGroups);
+}
 
 /* utils */
 const isCap = (str) => {
@@ -179,12 +184,11 @@ const findNumberAfterCloseParen = (formula, parenIdx) => {
 
 const createExpandedExpression = (formula) => {
   /*
-  stateMachine2 distributes the optional atom number to every atom in the string in the string
-  stateMachine one treats each number as if it's for the atom immediately to 
-  it's left, and each atom without a number is give one  
+    stateMachine2 distributes the optional atom number to every atom in the string in the string
+    stateMachine one treats each number as if it's for the atom immediately to 
+    it's left, and each atom without a number is give one  
   */
 
-  //   debugger;
   if (formula.indexOf("(") === -1) {
     return tokenizeAtoms(formula, stateMachine);
   }
@@ -230,19 +234,6 @@ const simplifyChemicalFormula = (formula) => {
   return tupleJoin(sortedTuples);
 };
 
-// console.log(simplifyChemicalFormula("Mg(OH)2"));
-// console.log(tokenizeAtoms("Mg(OH)2", stateMachine2));
-// console.log(simplifyChemicalFormula("MgOg2"));
-// console.log(tokenizeAtoms("MgOg2", stateMachine2));
-
-/**
- *
- * @param {*} formula
- * @param {*} state
- * @param {*} state.buffer
- * @param {*} state.optionalNumber
- */
-
 /**
  * one approach is:
  *
@@ -260,9 +251,7 @@ const simplifyChemicalFormula = (formula) => {
  *   OurArray:[[Mg, 1], 0, 1]
  *   OurArray:[[O, 1], [H, 1], 3, 4],
  * ]
- * ]
- */
-/**
+ *
  * on first pass you need to get the first parenthesis group, a la
  *
  * let openParenIdx = formula.lastIndexOf("(");
@@ -272,44 +261,56 @@ const simplifyChemicalFormula = (formula) => {
  * first open parenthesis, the atomstring for
  *  secondLastIndexOf("(") and nextIndexOf(")"), approaching lastIndexOf("(")
  */
-
-const firstPassSM = (formula, state) => {
+const expandGroups = (formula) => {
   const chars = formula.split("");
   const groupingChars = ["(", ")"];
-  let { currentAtomString, optionalNumber, tuples, start, end } = state;
+  let { currentAtomString, tuples, start, end } = {
+    currentAtomString: "",
+    tuples: [],
+    start: null,
+    end: null,
+  };
 
   chars.forEach((char, idx) => {
     const nextChar = chars[idx + 1];
 
     if ((groupingChars.includes(char) || !nextChar) && currentAtomString) {
-      console.log("in first if");
-
-      if (char === "(") {
-        console.log();
-      }
+      // you've reached the end of this group's atom string
       end = idx - 1;
 
-      const ourAtoms = tokenizeAtoms(currentAtomString, stateMachine);
-      tuples.push([ourAtoms, [start, end]]);
+      if (!nextChar && isNumber(char)) {
+        end = idx;
+      }
+
+      if (isNumber(char)) {
+        currentAtomString += char;
+      }
+
+      const innerGroupAtoms = tokenizeAtoms(currentAtomString, stateMachine2);
+      tuples.push([innerGroupAtoms, [start, end]]);
 
       currentAtomString = "";
       start = null;
       end = null;
-      console.log();
     }
 
     if (!isNumber(char) && !groupingChars.includes(char)) {
+      // this is part of the atom name
       currentAtomString += char;
 
       if (start === null) {
         start = idx;
       }
     }
+
     if (isNumber(char) && currentAtomString) {
+      // this is an optional number, not the group coefficient
       currentAtomString += char;
     }
   });
 
+  // move through the groups, left to right, and join the tuples and replace the atom names and
+  // optional number with the joined tuples.-
   for (let i = tuples.length - 1; i >= 0; i--) {
     let mytuple = tuples[i];
     let indexTuple = mytuple[mytuple.length - 1];
@@ -326,30 +327,5 @@ const firstPassSM = (formula, state) => {
 
   return formula;
 };
-let thestate = firstPassSM("Abc(Def(Abc2)2)2", {
-  currentAtomString: "",
-  tuples: [],
-  start: null,
-  end: null,
-});
 
-console.log(simplifyChemicalFormula(thestate));
-console.log();
-/*
-what im seeing now is that when parens are there, simplifyChemicalFormula() works and makes the right string according to the screenshotf
-
-simplifyChemicalFormula("Mg(OH)2")
-tokenizeAtoms("Mg(OH)2", stateMachine2)
-
--> H2Mg1O2                                                          // correct
--> [ [ 'Mg', 2 ], [ '(', 2 ], [ 'O', 2 ], [ 'H', 2 ], [ ')', 2 ] ]  // wrong
-
-When no parens in main formula, the tokenizeAtoms routine with the stateMachine2 callback creates the right tokens, but the current simplifyRoutine doesn't achieve this.
-the current simplifyRoutine calls tokenizeAtoms(..., stateMachine), so the original logic.
-
-simplifyChemicalFormula("MgOg2")        // wrong
-tokenizeAtoms("MgOg2", stateMachine2)   // correct
-
--> Mg1Og2
--> [ [ 'Mg', 2 ], [ 'Og', 2 ] ]
-*/
+console.log(main());
