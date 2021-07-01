@@ -1,47 +1,10 @@
-/*
-trying to solve this by
-	1. expanding any parenthesis groups and distributing the right hand coeffecients (Mg2)->3<-, until it's just one long string
-     eg: Abc(Def(Abc)2)3 -> AbcDef3Abc2Abc2																							
-	2. Tokenizing the string: [ 
-  	 	["Abc": 1],
-      ["Def": 3],
-      ["Abc": 2],
-			["Abc": 2],
-		 ]
-  3. Reducing, and sorting by arrayElement[0]: [
-			["Abc": 5],
-			["Def": 3]
-  ]
-	4. joing the tuples and making a new string: "Abc5Def3"
+const { isCap, isNumber, replace, tupleJoin } = require("../utils");
 
-/*
-turn a string of atom names and numbers into an array of tuples:
-[ [name, number], ... ]
-*/
 function main() {
   // let expandedGroups = expandGroups("MgOg2");
-  let expandedGroups = expandGroups("Abc(Def(AbcOg2)2)3");
+  let expandedGroups = expandGroups("Mg(H(KO2)2)3");
   return simplifyChemicalFormula(expandedGroups);
 }
-
-/* utils */
-const isCap = (str) => {
-  if (Number(str) === +str) return false;
-
-  if (str === str.toUpperCase()) {
-    return true;
-  } else {
-    return false;
-  }
-};
-
-const isNumber = (str) => {
-  if (Number(str) === +str) {
-    return true;
-  } else {
-    return false;
-  }
-};
 
 /*
  * atoms are tokenized while recursivly moving through the inside all of the
@@ -138,29 +101,6 @@ const distributeOverAtoms = (coeffecient, atoms) => {
   atoms.forEach((atom) => {
     atom[1] = atom[1] * coeffecient;
   });
-};
-
-const replace = (string, open, close, replaceStr) => {
-  // replace an index range, inclusive of the start and end indexes
-  let charArr = string.split("");
-  charArr.splice(open, close + 1 - open);
-
-  let replaceStrCharArray = replaceStr.split("");
-
-  let frontArray = charArr.splice(0, open);
-
-  let joinedArray = [].concat(frontArray, replaceStrCharArray, charArr);
-
-  return joinedArray.join("");
-};
-
-const tupleJoin = (tuplesArr) => {
-  // returns
-  let str = "";
-  tuplesArr.forEach((tuple) => {
-    str += tuple.join("");
-  });
-  return str;
 };
 
 const findNumberAfterCloseParen = (formula, parenIdx) => {
@@ -327,5 +267,5 @@ const expandGroups = (formula) => {
 
   return formula;
 };
-
+// /(\([^\(]+?\))/g       // regexp for captuing the outermost group in a line.
 console.log(main());
