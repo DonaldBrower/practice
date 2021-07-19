@@ -39,9 +39,26 @@ const tupleJoin = (tuplesArr) => {
   return str;
 };
 
+function extractAllNumbersAfterIdx(formula, contentIdxLast) {
+  let numberHasEnded = false,
+    i = contentIdxLast,
+    output = "";
+
+  while (!numberHasEnded) {
+    if (Number.isInteger(+formula[++i])) {
+      output += formula[i];
+    } else {
+      numberHasEnded = true;
+    }
+  }
+
+  return +output;
+}
+
 module.exports = {
   isCap,
   isNumber,
   replace,
   tupleJoin,
+  extractAllNumbersAfterIdx,
 };
