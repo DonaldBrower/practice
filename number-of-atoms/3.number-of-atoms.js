@@ -91,9 +91,13 @@ const innerGroups = (formula) => {
       group.index + group[0].length - 1
     );
   });
-  console.log();
 };
 
+/**
+ *  use the output of innerGroups(formula) to simplify the expressions within each group
+ * @param {*} formula
+ * @param {*} innerGroups
+ */
 const expandInnerGroups = (formula, innerGroups) => {
   for (let i = innerGroups.length; i >= 0; i--) {
     console.log(innerGroups[i]);
@@ -103,10 +107,11 @@ const expandInnerGroups = (formula, innerGroups) => {
 /* main loop */
 
 const main = (formula) => {
+  const x_innerGroups = innerGroups(formula);
+  const formulaInnerGroupsExpanded = expandInnerGroups(formula, x_innerGroups);
   // console.log(JSON.stringify(innerGroups(formula), undefined, 4));
   // console.log(JSON.stringify(deepestGroups(formula), undefined, 4));
-
-  expandInnerGroups(formula, innerGroups(formula));
+  // expandInnerGroups(formula, innerGroups(formula));
 };
 
-main("Mg(OH2(O2)22(O5))2");
+main("MgA4(OgHKLMg(HOg3)2(KP9))");
