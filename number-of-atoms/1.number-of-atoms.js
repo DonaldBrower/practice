@@ -1,8 +1,8 @@
-const { isCap, isNumber, replace, tupleJoin } = require("../utils");
+const { isCap, isNumber, replace, tupleJoin } = require("./utils");
 
 function main() {
   // let expandedGroups = expandGroups("MgOg2");
-  let expandedGroups = expandGroups("Mg(H(KO2)2)3");
+  let expandedGroups = expandGroups("Mg(H(K(O4)O2(H2)5)2)3");
   return simplifyChemicalFormula(expandedGroups);
 }
 
