@@ -10,7 +10,7 @@
   8 - 0
 */
 
-console.log(off(1));
+console.log(off(9));
 
 function off(n) {
   const offSwitches = [];
@@ -19,13 +19,13 @@ function off(n) {
   function recurse(n) {
     if (n < 1) return offSwitches;
 
-    // in the list of numbers (switches) 1.. n, if there are an even number of
+    // in the list of numbers (switches) 1.. n, if there are an odd number of
     // numbers that n is divisible by, push n to the output array
     let divisibles = 0;
-    for (let i = 1; i < n; i++) {
+    for (let i = 1; i <= n; i++) {
       if (n % i === 0) divisibles++;
     }
-    if (divisibles % 2 === 0) offSwitches.push(n);
+    if (divisibles % 2 !== 0) offSwitches.push(n);
 
     return recurse(--n);
   }

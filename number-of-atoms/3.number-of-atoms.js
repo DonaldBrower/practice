@@ -7,6 +7,12 @@ main("MgA4(OgHKLMg(HOg3)2(KP9))");
 function main(formula) {
   const x_innerGroups = innerGroups(formula);
   const formulaInnerGroupsExpanded = expandInnerGroups(formula, x_innerGroups);
+  const replacedInnerGroupFormula = replaceGroupsInString(
+    formula,
+    formulaInnerGroupsExpanded
+  );
+  const parenGroups = deepestGroups(replacedInnerGroupFormula);
+  console.log(parenGroups);
 
   // the transformed formula is going to go into this function, and recursivly have the multiplicity applied all groups and subgroups.
   // deepestGroups();
@@ -33,8 +39,22 @@ function expandInnerGroups(formula, innerGroups) {
   }
 
   //move through each group and replace it's index range in the formula with the joined tuples
-
+  return innerGroups;
   console.log(JSON.stringify(innerGroups, undefined, 2));
+}
+
+function replaceGroupsInString(targetString, tokengroups) {
+  let updatingTargetString = targetString;
+  for (let i = tokengroups.length - 1; 0 < i; i--) {
+    const expandedString = tupleJoin(tokengroups[i].tokens);
+    updatingTargetString = replace(
+      updatingTargetString,
+      tokengroups[i].idxFirst,
+      tokengroups[i].wholegroupIdxLast,
+      expandedString
+    );
+  }
+  return updatingTargetString;
 }
 
 function distributeOverAtoms(coeffecient, atoms) {
