@@ -1,82 +1,134 @@
-const { isCap, isNumber, replace, tupleJoin } = require("./utils");
+var { isCap, isNumber, replace, tupleJoin } = require("./utils");
 
-const { Group } = require("./Group.js");
+var { Group } = require("./Group.js");
 
 /* main loop */
 main("MgA4(OgHKLMg(HOg3)2(KP9))");
+
+// ******************************************************************************************
 function main(formula) {
-  const x_innerGroups = innerGroups(formula);
-  const formulaInnerGroupsExpanded = expandInnerGroups(formula, x_innerGroups);
-  const replacedInnerGroupFormula = replaceGroupsInString(
+  var innerGroupContent = innerGroups(formula);
+
+  var innerGroupContentExpanded = expandInnerGroups(innerGroupContent);
+  var formulaInnerGroupsExpanded = replaceGroupsInString(
     formula,
+    innerGroupContentExpanded
+  );
+
+  // ***************************************************************************
+
+  var fullyExpandedString = recursivelyExpandDeepestGroups(
     formulaInnerGroupsExpanded
   );
-  const parenGroups = deepestGroups(replacedInnerGroupFormula);
-  console.log(parenGroups);
+  console.log(
+    reduceFinalTuples(tokenizeAtoms(fullyExpandedString, stateMachine))
+  );
+  function recursivelyExpandDeepestGroups(formula) {
+    // formula doesn't contain any parens, then we've hit our base case)
+    if (!formula.match(/\(|\)/g)) {
+      return formula;
+    }
 
-  // the transformed formula is going to go into this function, and recursivly have the multiplicity applied all groups and subgroups.
-  // deepestGroups();
+    // extract deepest group, expand, and recurse with the expanded string as the
+    //  argument
 
-  // console.log(JSON.stringify(formulaInnerGroupsExpanded, undefined, 2));
+    var parenGroupContent = deepestGroups(formula);
+
+    var expandedParenGroups = parenGroupContent.map(function expand(group) {
+      group.tokens = tokenizeAtoms(
+        group.content.replace(/\(|\)/g, ""),
+        stateMachine
+      );
+      if (group.coefficient > 1) {
+        distributeOverAtoms(group.coefficient, group.tokens);
+      } else {
+        distributeOverAtoms(1, group.tokens);
+      }
+      return group;
+    });
+
+    var formulaParenGroupsExpanded = replaceGroupsInString(
+      formula,
+      expandedParenGroups
+    );
+
+    return recursivelyExpandDeepestGroups(formulaParenGroupsExpanded);
+  }
+  function reduceFinalTuples(tuples) {
+    var atomsToQty = {};
+    tuples.forEach(function processTuple(tuple, idx) {
+      if (!atomsToQty[tuple[0]]) {
+        atomsToQty[tuple[0]] = tuple[1];
+      } else if (atomsToQty[tuple[0]]) {
+        atomsToQty[tuple[0]] += tuple[1];
+      }
+    });
+
+    var reducedTuples = [];
+    for (let key in atomsToQty) {
+      reducedTuples.push([key, atomsToQty[key]]);
+    }
+
+    var sortedTuples = reducedTuples.sort();
+    return tupleJoin(sortedTuples);
+  }
 }
 
+// ******************************************************************************************
 /**
- *  use the output of innerGroups(formula) to simplify the expressions within each group
+ * use the output of innerGroups(formula) to simplify the expressions within each group.
  * @param {*} formula
  * @param {*} innerGroups
  */
-function expandInnerGroups(formula, innerGroups) {
+function expandInnerGroups(innerGroups) {
   for (let i = innerGroups.length; i >= 0; i--) {
     if (innerGroups[i]) {
-      let { content, coefficient } = innerGroups[i];
+      var { content, coefficient } = innerGroups[i];
+
       innerGroups[i].tokens = tokenizeAtoms(content, stateMachine);
-      let { tokens } = innerGroups[i];
+
+      var { tokens } = innerGroups[i];
 
       if (coefficient > 0) {
         distributeOverAtoms(coefficient, tokens);
       }
     }
   }
-
-  //move through each group and replace it's index range in the formula with the joined tuples
   return innerGroups;
-  console.log(JSON.stringify(innerGroups, undefined, 2));
 }
 
-function replaceGroupsInString(targetString, tokengroups) {
-  let updatingTargetString = targetString;
-  for (let i = tokengroups.length - 1; 0 < i; i--) {
-    const expandedString = tupleJoin(tokengroups[i].tokens);
-    updatingTargetString = replace(
-      updatingTargetString,
-      tokengroups[i].idxFirst,
-      tokengroups[i].wholegroupIdxLast,
+function replaceGroupsInString(target, groups) {
+  var updatingTarget = target;
+
+  for (let i = groups.length - 1; 0 <= i; i--) {
+    var { idxFirst, wholegroupIdxLast, tokens } = groups[i];
+
+    var expandedString = tupleJoin(tokens);
+    updatingTarget = replace(
+      updatingTarget,
+      idxFirst,
+      wholegroupIdxLast,
       expandedString
     );
   }
-  return updatingTargetString;
+  return updatingTarget;
 }
 
 function distributeOverAtoms(coeffecient, atoms) {
-  console.log();
-
-  atoms.forEach((atom) => {
+  atoms.forEach(function distributeOverAtom(atom) {
     atom[1] = atom[1] * coeffecient;
   });
-
-  console.log();
 }
 
 /**
- *
  * @param {*} formula
  * @returns {Group[]} - returns a collection of Group objects, created
  *  from the match results of applying a regexp to the formula
  */
 function deepestGroups(formula) {
-  let deepestGroups = new RegExp(/(\([^\(]+?\))/g);
-  console.log();
-  return [...formula.matchAll(deepestGroups)].map((group) => {
+  var deepestGroups = new RegExp(/(\([^\(]+?\))/g);
+
+  return [...formula.matchAll(deepestGroups)].map(function groupFromRgx(group) {
     return new Group(
       group.input,
       group[0],
@@ -93,8 +145,9 @@ function deepestGroups(formula) {
  *  match results of applying the atomsInGroups regular expression to the formula
  */
 function innerGroups(formula) {
-  let atomsInGroups = new RegExp(/([A-Za-z]+)/g);
-  return [...formula.matchAll(atomsInGroups)].map((group) => {
+  var atomsInGroups = new RegExp(/([A-Za-z]+)/g);
+
+  return [...formula.matchAll(atomsInGroups)].map(function groupFromRgx(group) {
     return new Group(
       group.input,
       group[0],
@@ -112,9 +165,9 @@ function innerGroups(formula) {
  * [atomName: str, atomQty: num]
  */
 function tokenizeAtoms(atomString, stateMachine) {
-  const atomChars = atomString.split("");
+  var atomChars = atomString.split("");
 
-  const state = {
+  var state = {
     buffer: "",
     quantString: "",
     atoms: [],
@@ -132,8 +185,8 @@ function tokenizeAtoms(atomString, stateMachine) {
   distribute the atom string coeffecients before handling any parenthesis groups, so when the distributing the group coefeccient  happens, it can be applied to all the tuples, and then can be simply reduced  
 */
 function stateMachine(atomCharacters, state) {
-  atomCharacters.forEach((char, i) => {
-    const nextChar = atomCharacters[i + 1] || null;
+  atomCharacters.forEach(function procesChar(char, i) {
+    var nextChar = atomCharacters[i + 1] || null;
 
     // is this the last character for this atom/number?
     if (isCap(nextChar) === true || nextChar === null) {
@@ -143,7 +196,9 @@ function stateMachine(atomCharacters, state) {
         state.quantString += char;
       }
 
-      if (!state.quantString) state.quantString = "1";
+      if (!state.quantString) {
+        state.quantString = "1";
+      }
 
       state.atoms.push([state.buffer, +state.quantString]);
       state.buffer = "";
