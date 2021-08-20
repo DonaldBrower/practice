@@ -1,4 +1,4 @@
-const { isCap, isNumber, replace, tupleJoin } = require("./utils");
+const { isCap, isNumber, replace, tupleJoin } = require("../utils");
 
 function main() {
   // let expandedGroups = expandGroups("MgOg2");

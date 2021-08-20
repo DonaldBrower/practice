@@ -1,51 +1,43 @@
 "use strict";
-var { isCap, isNumber, replace, tupleJoin } = require("./utils");
+var { isCap, isNumber, replace, tupleJoin, Group } = require("./utils");
 
-var { Group } = require("./Group.js");
+module.exports = { numberOfAtoms: main };
 
-/* main loop */
-main("MgA4(OgHKLMg(HOg3)2(KP9))");
-
-// ******************************************************************************************
+// *******************
 function main(formula) {
-  var innerGroupContent = innerGroups(formula);
-
+  var innerGroupContent = getInnerGroups(formula);
   var innerGroupContentExpanded = expandInnerGroups(innerGroupContent);
   var formulaInnerGroupsExpanded = replaceGroupsInString(
     formula,
     innerGroupContentExpanded
   );
-
   var fullyExpandedString = recursivelyExpandDeepestGroups(
     formulaInnerGroupsExpanded
   );
-  var output = reduceFinalTuples(
-    tokenizeAtoms(fullyExpandedString, stateMachine)
-  );
-  console.log(`
-    Formula: ${formula}
-    Reduced: ${output}
-  `);
+
+  var output = reduceFinalTuples(tokenizeAtoms(fullyExpandedString));
+  return output;
 }
 
-//*****************************************************************************
 /**
  *
  * @param {*} formula
  * @returns {Group[]} returns a collection of Group objects, created from the
  *  match results of applying the atomsInGroups regular expression to the formula
  */
-function innerGroups(formula) {
-  var atomsInGroups = new RegExp(/([A-Za-z]+)/g);
+function getInnerGroups(formula) {
+  var innerGroups = /([A-Za-z]+)/g;
 
-  return [...formula.matchAll(atomsInGroups)].map(function groupFromRgx(group) {
-    return new Group(
-      group.input,
-      group[0],
-      group.index,
-      group.index + group[0].length - 1
-    );
-  });
+  return [...formula.matchAll(innerGroups)].map(regxMatchToGroup);
+
+  //******************************
+  function regxMatchToGroup(group) {
+    var [content] = group;
+    var { index, input } = group;
+    var contentIdxLast = index + content.length - 1;
+
+    return new Group(input, content, index, contentIdxLast);
+  }
 }
 
 /**
@@ -58,7 +50,7 @@ function expandInnerGroups(innerGroups) {
     if (innerGroups[i]) {
       var { content, coefficient } = innerGroups[i];
 
-      innerGroups[i].tokens = tokenizeAtoms(content, stateMachine);
+      innerGroups[i].tokens = tokenizeAtoms(content);
 
       var { tokens } = innerGroups[i];
 
@@ -82,10 +74,7 @@ function recursivelyExpandDeepestGroups(formula) {
   var parenGroupContent = deepestGroups(formula);
 
   var expandedParenGroups = parenGroupContent.map(function expand(group) {
-    group.tokens = tokenizeAtoms(
-      group.content.replace(/\(|\)/g, ""),
-      stateMachine
-    );
+    group.tokens = tokenizeAtoms(group.content.replace(/\(|\)/g, ""));
     if (group.coefficient > 1) {
       distributeOverAtoms(group.coefficient, group.tokens);
     } else {
@@ -138,7 +127,7 @@ function reduceFinalTuples(tuples) {
   var sortedTuples = reducedTuples.sort();
   return tupleJoin(sortedTuples);
 }
-// ******************************************************************************************
+// *********************************************
 
 /**
  *
@@ -181,54 +170,52 @@ function distributeOverAtoms(coeffecient, atoms) {
  * uses state machine, returns an array of Tuples:
  * [atomName: str, atomQty: num]
  */
-function tokenizeAtoms(atomString, stateMachine) {
+function tokenizeAtoms(atomString) {
   var atomChars = atomString.split("");
 
-  var state = {
-    buffer: "",
-    quantString: "",
-    atoms: [],
-  };
+  return stateMachine(atomChars).atoms;
 
-  stateMachine(atomChars, state);
-  return state.atoms;
-}
-
-/* 
-  tokenize("MgOg2") should return [Mg, 2], [Og, 2]
-  
-  if parenthesis are used, then only the atoms inside get the coeffcient, eg: "Mg(OH)2" [Mg, 1], [O, 2], [H, 2] 
-
-  distribute the atom string coeffecients before handling any parenthesis groups, so when the distributing the group coefeccient  happens, it can be applied to all the tuples, and then can be simply reduced  
-*/
-function stateMachine(atomCharacters, state) {
-  atomCharacters.forEach(function procesChar(char, i) {
-    var nextChar = atomCharacters[i + 1] || null;
-
-    // is this the last character for this atom/number?
-    if (isCap(nextChar) === true || nextChar === null) {
-      if (!isNumber(char)) {
-        state.buffer += char;
-      } else if (isNumber(char)) {
-        state.quantString += char;
-      }
-
-      if (!state.quantString) {
-        state.quantString = "1";
-      }
-
-      state.atoms.push([state.buffer, +state.quantString]);
-      state.buffer = "";
-      state.quantString = "";
+  //***
+  function stateMachine(
+    atomCharacters,
+    state = {
+      buffer: "",
+      quantString: "",
+      atoms: [],
     }
+  ) {
+    atomCharacters.forEach(processChar);
+    return state;
 
-    // are there more characters in this atom/number?
-    if (isCap(nextChar) === false) {
-      if (!isNumber(char)) {
-        state.buffer += char;
-      } else if (isNumber(char)) {
-        state.quantString += char;
+    //***
+    function processChar(char, i) {
+      var nextChar = atomCharacters[i + 1] || null;
+
+      // is this the last character for this atom/number?
+      if (isCap(nextChar) === true || nextChar === null) {
+        if (!isNumber(char)) {
+          state.buffer += char;
+        } else if (isNumber(char)) {
+          state.quantString += char;
+        }
+
+        if (!state.quantString) {
+          state.quantString = "1";
+        }
+
+        state.atoms.push([state.buffer, +state.quantString]);
+        state.buffer = "";
+        state.quantString = "";
+      }
+
+      // are there more characters in this atom/number?
+      if (isCap(nextChar) === false) {
+        if (!isNumber(char)) {
+          state.buffer += char;
+        } else if (isNumber(char)) {
+          state.quantString += char;
+        }
       }
     }
-  });
+  }
 }

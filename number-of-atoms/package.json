@@ -1,0 +1,15 @@
+{
+  "name": "number-of-atoms",
+  "version": "1.0.0",
+  "description": "",
+  "main": "1.number-of-atoms.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^27.0.6"
+  }
+}
