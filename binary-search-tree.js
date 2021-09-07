@@ -1,13 +1,15 @@
-// TODO - code the test, replacing what these functions were originally passed into on AlgoExpert.com
 "use strict";
 
-module.exports = {
-  inOrderTraverse,
-  preOrderTraverse,
-  postOrderTraverse,
-};
+function Tree(val) {
+  this.val = val;
+  this.left = null;
+  this.right = null;
+}
 
-//******************************
+module.exports = inOrderTraverse;
+module.exports = preOrderTraverse;
+module.exports = postOrderTraverse;
+
 function inOrderTraverse(tree) {
   if (tree === null) {
     return [];
