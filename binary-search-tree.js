@@ -6,9 +6,11 @@ function Tree(val) {
   this.right = null;
 }
 
-module.exports = inOrderTraverse;
-module.exports = preOrderTraverse;
-module.exports = postOrderTraverse;
+module.exports = {
+  inOrderTraverse,
+  preOrderTraverse,
+  postOrderTraverse,
+};
 
 function inOrderTraverse(tree) {
   if (tree === null) {

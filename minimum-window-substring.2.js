@@ -6,7 +6,7 @@ module.exports = {
 
 //*************************************************************
 function main(source, target) {
-  var source__remainingCharsOfType = target
+  var remainingCharsOfType = target
     .split("")
     .reduce(addToRemaingCharsOfType, { total: target.length });
   /**
@@ -82,3 +82,33 @@ function windowIsOpen(currentWindow) {
   if (currentWindow.length > 0) return true;
   else return false;
 }
+
+
+// solving this problem with a queue.
+var myQueue = new Queue();
+
+function Queue() {
+  this._storage = {};
+
+  this.front = null;
+  this.back = null;
+}
+
+Queue.prototype.enqueue = function enqueue() {
+  if (this.front === null) {
+     
+  }
+};
+
+Queue.prototype.dequeue = function dequeue() {
+  
+};
+
+Queue.prototype.clear = function clear() {
+  
+};
+
+
+
+
+
